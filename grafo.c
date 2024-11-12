@@ -120,7 +120,7 @@ void adiciona_vertice(int id, char *rotulo, int particao, grafo G) {
 // remove vertice com id <id> do grafo G e o destroi
 // [deve remover e destruir tambem as arestas incidentes]
 void remove_vertice(int id, grafo G) {
-  vertice v = (vertice) remove_chave_int(id, G->vertices, vertice_id);
+  vertice v = (vertice) remove_chave_int(id, G->vertices, (int_f_obj)vertice_id);
   if (!v) return;
   
   // Remove e desaloca todas as arestas incidentes
@@ -135,8 +135,8 @@ void remove_vertice(int id, grafo G) {
 // cria aresta com id <id> incidente a vertices com ids
 // <u_id> e <v_id> e adiciona ao grafo G
 void adiciona_aresta(int id, int u_id, int v_id, grafo G) {
-  vertice u = (vertice) busca_chave_int(u_id, G->vertices, vertice_id);
-  vertice v = (vertice) busca_chave_int(v_id, G->vertices, vertice_id);
+  vertice u = (vertice) busca_chave_int(u_id, G->vertices, (int_f_obj)vertice_id);
+  vertice v = (vertice) busca_chave_int(v_id, G->vertices, (int_f_obj)vertice_id);
   if (!u || !v) {
     fprintf(stderr, "Erro: vértices não encontrados para criar a aresta.\n");
     return;
@@ -158,11 +158,11 @@ void adiciona_aresta(int id, int u_id, int v_id, grafo G) {
 
 // remove aresta com id <id> do grafo G e a destroi
 void remove_aresta(int id, grafo G) {
-  aresta e = (aresta) remove_chave_int(id, G->arestas, aresta_id);
+  aresta e = (aresta) remove_chave_int(id, G->arestas, (int_f_obj)aresta_id);
   if (!e) return;
   
-  remove_chave_int(id, e->u->fronteira_saida, aresta_id);
-  remove_chave_int(id, e->v->fronteira_entrada, aresta_id);
+  remove_chave_int(id, e->u->fronteira_saida, (int_f_obj)aresta_id);
+  remove_chave_int(id, e->v->fronteira_entrada, (int_f_obj)aresta_id);
   free(e);
 }
 
