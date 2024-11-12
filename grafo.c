@@ -61,35 +61,109 @@ lista arestas(grafo G) {
 
 // cria grafo vazio e o retorna
 grafo cria_grafo(int id) {
-  //TODO: implementar...
+  grafo G = (grafo)malloc(sizeof(struct t_grafo));
+  if (!G) {
+    fprintf(stderr, "Erro ao alocar memória para o grafo.\n");
+    exit(EXIT_FAILURE);
+  }
+  G->id = id;
+  G->vertices = cria_lista(); 
+  G->arestas = cria_lista();
+  return G;
 }
 
 // destroi grafo G (desaloca toda a memoria)
 void destroi_grafo(grafo G) {
-  //TODO: implementar...
+  if (!G) return;
+
+  // Remove e desaloca todos os vértices
+  while (!vazio(G->vertices)) {
+    vertice v = (vertice) desempilha(G->vertices);
+    if (v) {
+      while (!vazio(v->fronteira_entrada))
+        free(desempilha(v->fronteira_entrada)); 
+      
+      while (!vazio(v->fronteira_saida))
+        free(desempilha(v->fronteira_saida));
+      free(v);
+    }
+  }
+  
+  // Remove e desaloca todas as arestas
+  while (!vazio(G->arestas))
+    free(desempilha(G->arestas));
+  
+  free(G);
 }
 
 // cria novo vertice com id <id>, rotulo <rotulo>, particao <particao>
 // e adiciona ao grafo G
 void adiciona_vertice(int id, char *rotulo, int particao, grafo G) {
-  //TODO: implementar...
+  vertice v = (vertice) malloc(sizeof(struct t_vertice));
+  if (!v) {
+    fprintf(stderr, "Erro ao alocar memória para o vértice.\n");
+    exit(EXIT_FAILURE);
+  }
+
+  v->id = id;
+  strncpy(v->rotulo, rotulo, sizeof(v->rotulo) - 1);
+  v->rotulo[sizeof(v->rotulo) - 1] = '\0'; // garante a terminação nula
+  v->particao = particao;
+  v->custo = 0;
+  v->estado = 0;
+  v->pai = NULL;
+  v->fronteira_entrada = cria_lista(); 
+  v->fronteira_saida = cria_lista();  
+  empilha(v, G->vertices); 
 }
 
 // remove vertice com id <id> do grafo G e o destroi
 // [deve remover e destruir tambem as arestas incidentes]
 void remove_vertice(int id, grafo G) {
-  //TODO: implementar...
+  vertice v = (vertice) remove_chave_int(id, G->vertices, vertice_id);
+  if (!v) return;
+  
+  // Remove e desaloca todas as arestas incidentes
+  while (!vazio(v->fronteira_entrada))
+    free(desempilha(v->fronteira_entrada));
+  while (!vazio(v->fronteira_saida))
+    free(desempilha(v->fronteira_saida));
+  
+  free(v);
 }
 
 // cria aresta com id <id> incidente a vertices com ids
 // <u_id> e <v_id> e adiciona ao grafo G
 void adiciona_aresta(int id, int u_id, int v_id, grafo G) {
-  //TODO: implementar...
+  vertice u = (vertice) busca_chave_int(u_id, G->vertices, vertice_id);
+  vertice v = (vertice) busca_chave_int(v_id, G->vertices, vertice_id);
+  if (!u || !v) {
+    fprintf(stderr, "Erro: vértices não encontrados para criar a aresta.\n");
+    return;
+  }
+
+  aresta e = (aresta) malloc(sizeof(struct t_aresta));
+  if (!e) {
+    fprintf(stderr, "Erro ao alocar memória para a aresta.\n");
+    exit(EXIT_FAILURE);
+  }
+
+  e->id = id;
+  e->u = u;
+  e->v = v;
+  empilha(e, G->arestas);           
+  empilha(e, u->fronteira_saida);  
+  empilha(e, v->fronteira_entrada);
 }
 
 // remove aresta com id <id> do grafo G e a destroi
 void remove_aresta(int id, grafo G) {
-  //TODO: implementar...
+  aresta e = (aresta) remove_chave_int(id, G->arestas, aresta_id);
+  if (!e) return;
+  
+  remove_chave_int(id, e->u->fronteira_saida, aresta_id);
+  remove_chave_int(id, e->v->fronteira_entrada, aresta_id);
+  free(e);
 }
 
 //---------------------------------------------------------
