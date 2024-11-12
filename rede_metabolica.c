@@ -12,15 +12,65 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+int eh_enzima(char *s) {
+  return s[0] == '_';
+}
+
 // Cria grafo G e lê a rede metabólica do arquivo apontado por <f_met>,
 // adicionando em G as reações, enzimas e metabólitos, com as respectivas conexões.
 // Devolve o grafo G.
 grafo le_rede_metabolica(FILE *f_met) {
-  
+  if (!f_met) {
+    fprintf(stderr, "Erro ao abrir o arquivo.\n");
+    exit(EXIT_FAILURE);
+  }
+
   grafo G = cria_grafo(1);
-  
-  //TODO: implementar...
-  
+  char linha[256];
+  int id_aresta = 1;
+
+  while (fgets(linha, sizeof(linha), f_met)) {
+    // Remove o caractere de nova linha, se presente
+    linha[strcspn(linha, "\n")] = '\0';
+
+    // Se a linha contém "FIM", interrompe a leitura
+    if (strcmp(linha, "FIM") == 0) {
+      break;
+    }
+
+    // Parse da linha
+    char *token = strtok(linha, " ");
+    char *nome_reacao = token;
+
+    // Adiciona a reação ao grafo
+    adiciona_vertice(atoi(&nome_reacao[1]), nome_reacao, REACAO, G); // REACAO partição
+    vertice reacao = (vertice)busca_chave_str(nome_reacao, G->vertices, vertice_rotulo);
+
+    // Processa os substratos (podem ser metabólitos ou enzimas)
+    token = strtok(NULL, " ");
+    while (token && strcmp(token, "=>") != 0) {
+      if (eh_enzima(token)) {
+        adiciona_vertice(atoi(&token[2]), token, ENZIMA, G); // ENZIMA partição
+        vertice enzima = (vertice)busca_chave_str(token, G->vertices, vertice_rotulo);
+        adiciona_aresta(id_aresta++, enzima->id, reacao->id, G);
+      } else {
+        adiciona_vertice(atoi(&token[1]), token, METABOLITO, G); // METABOLITO partição
+        vertice substrato = (vertice)busca_chave_str(token, G->vertices, vertice_rotulo);
+        adiciona_aresta(id_aresta++, substrato->id, reacao->id, G);
+      }
+      token = strtok(NULL, " +");
+    }
+
+    // Processa os produtos (apenas metabólitos)
+    token = strtok(NULL, " ");
+    while (token && strcmp(token, ".") != 0) {
+        adiciona_vertice(atoi(&token[1]), token, METABOLITO, G); // METABOLITO partição (produto)
+        vertice produto = (vertice)busca_chave_str(token, G->vertices, vertice_rotulo);
+        adiciona_aresta(id_aresta++, reacao->id, produto->id, G);
+        token = strtok(NULL, " +");
+    }
+  }
+
   return G;
 }
 

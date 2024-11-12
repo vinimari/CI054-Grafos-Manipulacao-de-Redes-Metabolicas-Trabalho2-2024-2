@@ -20,6 +20,9 @@
 #define ENZIMA 2
 #define METABOLITO 3
 
+// Função auxiliar para verificar se uma string representa uma enzima
+int eh_enzima(char *s);
+
 // Cria grafo G e lê a rede metabólica do arquivo apontado por <f_met>,
 // adicionando em G as reações, enzimas e metabólitos, com as respectivas conexões.
 // Devolve o grafo G.
