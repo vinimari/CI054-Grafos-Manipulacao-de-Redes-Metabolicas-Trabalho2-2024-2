@@ -28,6 +28,7 @@ grafo le_rede_metabolica(FILE *f_met) {
   grafo G = cria_grafo(1);
   char linha[256];
   int id_aresta = 1;
+  int id_vertice = 1;
 
   while (fgets(linha, sizeof(linha), f_met)) {
     // Remove o caractere de nova linha, se presente
@@ -43,18 +44,18 @@ grafo le_rede_metabolica(FILE *f_met) {
     char *nome_reacao = token;
 
     // Adiciona a reação ao grafo
-    adiciona_vertice(atoi(&nome_reacao[1]), nome_reacao, REACAO, G); // REACAO partição
+    adiciona_vertice(id_vertice++, nome_reacao, REACAO, G); // REACAO partição
     vertice reacao = (vertice)busca_chave_str(nome_reacao, G->vertices, (str_f_obj)vertice_rotulo);
 
     // Processa os substratos (podem ser metabólitos ou enzimas)
     token = strtok(NULL, " ");
     while (token && strcmp(token, "=>") != 0) {
       if (eh_enzima(token)) {
-        adiciona_vertice(atoi(&token[2]), token, ENZIMA, G); // ENZIMA partição
+        adiciona_vertice(id_vertice++, token, ENZIMA, G); // ENZIMA partição
         vertice enzima = (vertice)busca_chave_str(token, G->vertices, (str_f_obj)vertice_rotulo);
         adiciona_aresta(id_aresta++, enzima->id, reacao->id, G);
       } else {
-        adiciona_vertice(atoi(&token[1]), token, METABOLITO, G); // METABOLITO partição
+        adiciona_vertice(id_vertice++, token, METABOLITO, G); // METABOLITO partição
         vertice substrato = (vertice)busca_chave_str(token, G->vertices, (str_f_obj)vertice_rotulo);
         adiciona_aresta(id_aresta++, substrato->id, reacao->id, G);
       }
@@ -64,7 +65,7 @@ grafo le_rede_metabolica(FILE *f_met) {
     // Processa os produtos (apenas metabólitos)
     token = strtok(NULL, " ");
     while (token && strcmp(token, ".") != 0) {
-        adiciona_vertice(atoi(&token[1]), token, METABOLITO, G); // METABOLITO partição (produto)
+        adiciona_vertice(id_vertice++, token, METABOLITO, G); // METABOLITO partição (produto)
         vertice produto = (vertice)busca_chave_str(token, G->vertices, (str_f_obj)vertice_rotulo);
         adiciona_aresta(id_aresta++, reacao->id, produto->id, G);
         token = strtok(NULL, " +");
