@@ -44,30 +44,26 @@ grafo le_rede_metabolica(FILE *f_met) {
     char *nome_reacao = token;
 
     // Adiciona a reação ao grafo
-    adiciona_vertice(id_vertice++, nome_reacao, REACAO, G); // REACAO partição
-    vertice reacao = (vertice)busca_chave_str(nome_reacao, G->vertices, (str_f_obj)vertice_rotulo);
+    vertice reacao = checa_e_adiciona_vertice(&id_vertice, nome_reacao, REACAO, G);
 
     // Processa os substratos (podem ser metabólitos ou enzimas)
     token = strtok(NULL, " ");
     while (token && strcmp(token, "=>") != 0) {
       if (eh_enzima(token)) {
-        adiciona_vertice(id_vertice++, token, ENZIMA, G); // ENZIMA partição
-        vertice enzima = (vertice)busca_chave_str(token, G->vertices, (str_f_obj)vertice_rotulo);
-        adiciona_aresta(id_aresta++, enzima->id, reacao->id, G);
+        vertice enzima = checa_e_adiciona_vertice(&id_vertice, token, ENZIMA, G);
+        adiciona_aresta(id_aresta++, vertice_id(enzima), vertice_id(reacao), G);
       } else {
-        adiciona_vertice(id_vertice++, token, METABOLITO, G); // METABOLITO partição
-        vertice substrato = (vertice)busca_chave_str(token, G->vertices, (str_f_obj)vertice_rotulo);
-        adiciona_aresta(id_aresta++, substrato->id, reacao->id, G);
+        vertice substrato = checa_e_adiciona_vertice(&id_vertice, token, METABOLITO, G);
+        adiciona_aresta(id_aresta++, vertice_id(substrato), vertice_id(reacao), G);
       }
       token = strtok(NULL, " +");
     }
 
-    // Processa os produtos (apenas metabólitos)
+    // Processa os produtos
     token = strtok(NULL, " ");
     while (token && strcmp(token, ".") != 0) {
-        adiciona_vertice(id_vertice++, token, METABOLITO, G); // METABOLITO partição (produto)
-        vertice produto = (vertice)busca_chave_str(token, G->vertices, (str_f_obj)vertice_rotulo);
-        adiciona_aresta(id_aresta++, reacao->id, produto->id, G);
+        vertice produto = checa_e_adiciona_vertice(&id_vertice, token, METABOLITO, G);
+        adiciona_aresta(id_aresta++,  vertice_id(reacao), vertice_id(produto), G);
         token = strtok(NULL, " +");
     }
   }
@@ -79,11 +75,30 @@ grafo le_rede_metabolica(FILE *f_met) {
 // em L os vértices que representam os substratos.
 // Devolve a lista de vértices L.
 lista le_substratos(grafo G) {
-
   lista L = cria_lista();
+  char linha[256];
   
-  //TODO: implementar...
-  
+  // Lê a linha de substratos da entrada padrão
+  if (fgets(linha, sizeof(linha), stdin) != NULL) {
+    linha[strcspn(linha, "\n")] = '\0'; // Remove o caractere de nova linha, se presente
+
+    // Divide a linha em substratos
+    char *token = strtok(linha, " ");
+    while (token && strcmp(token, "FIM") != 0) {
+      // Busca o vértice correspondente ao substrato no grafo
+      vertice v = (vertice)busca_chave_str(token, vertices(G), (str_f_obj)vertice_rotulo);
+      if (v) {
+        empilha(v, L); // Adiciona o vértice à lista L
+      } else {
+        fprintf(stderr, "Aviso: substrato %s não encontrado na rede metabólica.\n", token);
+      }
+      token = strtok(NULL, " ");
+    }
+  } else {
+    fprintf(stderr, "Erro ao ler a entrada dos substratos.\n");
+    exit(EXIT_FAILURE);
+  }
+
   return L;
 }
 
@@ -94,21 +109,51 @@ lista le_substratos(grafo G) {
 // Deve também adicionar as arestas necessárias.
 // ATENÇÃO: os rótulos "SF" e "RF" são usados no método imprime_reacoes_minimas().
 void adiciona_reacao_falsa(lista substratos, grafo G) {
-  
-  //TODO: implementar...
-  
+  int id_vertice = 1; 
+  int id_aresta = 1;
+
+  // Cria o vértice "SF" (substrato falso inicial)
+  adiciona_vertice(id_vertice++, "SF", METABOLITO, G);
+  vertice substrato_falso = (vertice)busca_chave_str("SF", vertices(G), (str_f_obj)vertice_rotulo);
+
+  // Cria o vértice "RF" (reação falsa)
+  adiciona_vertice(id_vertice++, "RF", REACAO, G);
+  vertice reacao_falsa = (vertice)busca_chave_str("RF", vertices(G), (str_f_obj)vertice_rotulo);
+
+  // Conecta "SF" a "RF"
+  adiciona_aresta(id_aresta++, vertice_id(substrato_falso), vertice_id(reacao_falsa), G);
+
+  // Conecta "RF" a todos os substratos iniciais na lista
+  no n = primeiro_no(substratos);
+  while (n) {
+    vertice substrato = (vertice)conteudo(n);
+    adiciona_aresta(id_aresta++, vertice_id(reacao_falsa), vertice_id(substrato), G); // Aresta de "RF" para cada substrato
+    n = proximo(n);
+  }
 }
 
 // Função auxiliar que inicializa os custos e pais dos vértices do grafo G para
 // iniciar busca em largura. O custo de uma reação é a quantidade de enzimas que
-// a cataliza.
+// a cataliza. 
 // Devolve uma lista de vértices para ser a Fila inicial do algoritmo de busca.
 lista inicializa_custos(grafo G) {
   lista F = cria_lista();
-  
-  //TODO: implementar...
-  
-  return F;
+
+  for (no n = primeiro_no(vertices(G)); n; n = proximo(n)) {
+        vertice v = conteudo(n);
+        v->custo = INT_MAX;
+        v->pai = NULL;
+        
+        if (!strcmp(vertice_rotulo(v), "SF")) {
+          v->custo = 0;       
+        }
+        
+        if (vertice_particao(v) != ENZIMA) {
+          empilha(v, F);
+        }
+    }
+
+    return F;
 }
 
 // Algoritmo variante de Dijkstra que encontra o conjunto de reações de custo
@@ -127,9 +172,30 @@ void processa(lista substratos, grafo G) {
   
   // variante do Algoritmo de Dijkstra para resolver o problema
   while (!vazio(F)) {
-    
-    //TODO: implementar
-    
+    vertice u = (vertice)remove_min(F, (int_f_obj)custo);
+    if (!u) break;
+
+    u->estado = PROCESSADO;
+
+    // Processa todos os vértices adjacentes a u
+    no n = primeiro_no(u->fronteira_saida);
+    while (n) {
+      aresta e = (aresta)conteudo(n);
+      vertice v = e->v; // Vértice adjacente
+
+      // Calcula o novo custo como o custo atual de u + custo da reação
+      int novo_custo = custo(u) + (vertice_particao(v) == REACAO ? custo(v) : 0);
+
+      // Se encontrar um caminho melhor, atualiza o custo e o pai de v
+      if (novo_custo < custo(v)) {
+        v->custo = novo_custo;
+        v->pai = u;
+      }
+
+      n = proximo(n);
+    }
+
+    u->estado = FECHADO;
   }
 }
 
