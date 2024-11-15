@@ -27,9 +27,9 @@ int main(int argc, char **argv) {
 
   // processa rede metabolica
   processa(substratos, G);
-  
+
   // imprime resultados
   imprime_reacoes_minimas(G);
-  
+
   return 0;
 }

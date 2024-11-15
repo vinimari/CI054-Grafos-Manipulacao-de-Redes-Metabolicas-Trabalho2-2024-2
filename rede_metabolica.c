@@ -88,7 +88,7 @@ lista le_substratos(grafo G) {
       // Busca o vértice correspondente ao substrato no grafo
       vertice v = (vertice)busca_chave_str(token, vertices(G), (str_f_obj)vertice_rotulo);
       if (v) {
-        empilha(v, L); // Adiciona o vértice à lista L
+        empilha(v, L);
       } else {
         fprintf(stderr, "Aviso: substrato %s não encontrado na rede metabólica.\n", token);
       }
@@ -109,25 +109,22 @@ lista le_substratos(grafo G) {
 // Deve também adicionar as arestas necessárias.
 // ATENÇÃO: os rótulos "SF" e "RF" são usados no método imprime_reacoes_minimas().
 void adiciona_reacao_falsa(lista substratos, grafo G) {
-  int id_vertice = 1; 
-  int id_aresta = 1;
-
   // Cria o vértice "SF" (substrato falso inicial)
-  adiciona_vertice(id_vertice++, "SF", METABOLITO, G);
+  adiciona_vertice(0, "SF", METABOLITO, G);
   vertice substrato_falso = (vertice)busca_chave_str("SF", vertices(G), (str_f_obj)vertice_rotulo);
 
   // Cria o vértice "RF" (reação falsa)
-  adiciona_vertice(id_vertice++, "RF", REACAO, G);
+  adiciona_vertice(0, "RF", REACAO, G);
   vertice reacao_falsa = (vertice)busca_chave_str("RF", vertices(G), (str_f_obj)vertice_rotulo);
 
   // Conecta "SF" a "RF"
-  adiciona_aresta(id_aresta++, vertice_id(substrato_falso), vertice_id(reacao_falsa), G);
+  adiciona_aresta(0, vertice_id(substrato_falso), vertice_id(reacao_falsa), G);
 
   // Conecta "RF" a todos os substratos iniciais na lista
   no n = primeiro_no(substratos);
   while (n) {
     vertice substrato = (vertice)conteudo(n);
-    adiciona_aresta(id_aresta++, vertice_id(reacao_falsa), vertice_id(substrato), G); // Aresta de "RF" para cada substrato
+    adiciona_aresta(0, vertice_id(reacao_falsa), vertice_id(substrato), G); // Aresta de "RF" para cada substrato
     n = proximo(n);
   }
 }
@@ -140,18 +137,22 @@ lista inicializa_custos(grafo G) {
   lista F = cria_lista();
 
   for (no n = primeiro_no(vertices(G)); n; n = proximo(n)) {
-        vertice v = conteudo(n);
-        v->custo = INT_MAX;
-        v->pai = NULL;
-        
-        if (!strcmp(vertice_rotulo(v), "SF")) {
-          v->custo = 0;       
-        }
-        
-        if (vertice_particao(v) != ENZIMA) {
-          empilha(v, F);
-        }
+    vertice v = conteudo(n);
+    v->custo = INT_MAX;
+    v->pai = NULL;
+    
+    if (!strcmp(vertice_rotulo(v), "SF")) {
+      v->custo = 0;       
     }
+
+    if (vertice_particao(v) == REACAO) {
+      v->custo = calcula_custo_reacao(&v); 
+    }
+    
+    if (vertice_particao(v) != ENZIMA) {
+      empilha(v, F);
+    }
+  }
 
     return F;
 }
@@ -178,13 +179,22 @@ void processa(lista substratos, grafo G) {
     u->estado = PROCESSADO;
 
     // Processa todos os vértices adjacentes a u
-    no n = primeiro_no(u->fronteira_saida);
+    no n = primeiro_no(fronteira_saida(u));
     while (n) {
       aresta e = (aresta)conteudo(n);
-      vertice v = e->v; // Vértice adjacente
+      vertice v = vertice_v(e); // Vértice adjacente
 
+      // Ignora vértices que já foram fechados
+      if (estado(v) == FECHADO) {
+        n = proximo(n);
+        continue;
+      }
+
+      int novo_custo = 0;
       // Calcula o novo custo como o custo atual de u + custo da reação
-      int novo_custo = custo(u) + (vertice_particao(v) == REACAO ? custo(v) : 0);
+      if ((vertice_particao(v) == REACAO)) {
+        novo_custo = custo(u) + custo(v);
+      }
 
       // Se encontrar um caminho melhor, atualiza o custo e o pai de v
       if (novo_custo < custo(v)) {
@@ -240,4 +250,19 @@ void imprime_reacoes_minimas(grafo G) {
       free(R);
     }
   }
+}
+
+// Calcula e retorna o custo das reações (quantidade de enzimas)
+int calcula_custo_reacao(vertice *v) {
+  int num_enzimas = 0;
+  
+  for (no n = primeiro_no(fronteira_entrada(*v)); n; n = proximo(n)) {
+    aresta e = conteudo(n);
+    vertice u = vertice_u(e);
+    if (vertice_particao(u) == ENZIMA) {
+      num_enzimas++;
+    }
+  }
+
+  return num_enzimas;
 }
