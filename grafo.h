@@ -73,6 +73,10 @@ grafo cria_grafo(int id);
 // destroi grafo G (desaloca toda a memoria)
 void destroi_grafo(grafo G);
 
+// Adiciona um vértice ao grafo se ele não existir.
+// retorna o ponteiro para o vértice, seja o existente ou o recém-adicionado.
+vertice checa_e_adiciona_vertice(int *id_vertice, char *rotulo, int particao, grafo G);
+
 // cria novo vertice com id <id>, rotulo <rotulo>, particao <particao>
 // e adiciona ao grafo G
 void adiciona_vertice(int id, char *rotulo, int particao, grafo G);
