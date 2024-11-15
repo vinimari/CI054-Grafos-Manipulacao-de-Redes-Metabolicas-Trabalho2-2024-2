@@ -96,6 +96,17 @@ void destroi_grafo(grafo G) {
   free(G);
 }
 
+// Adiciona um vértice ao grafo se ele não existir.
+// retorna o ponteiro para o vértice, seja o existente ou o recém-adicionado.
+vertice checa_e_adiciona_vertice(int *id_vertice, char *rotulo, int particao, grafo G) {
+  vertice v = (vertice)busca_chave_str(rotulo, vertices(G), (str_f_obj)vertice_rotulo);
+  if (!v) {
+    adiciona_vertice((*id_vertice)++, rotulo, particao, G);
+    v = (vertice)busca_chave_str(rotulo, vertices(G), (str_f_obj)vertice_rotulo);
+  }
+  return v;
+}
+
 // cria novo vertice com id <id>, rotulo <rotulo>, particao <particao>
 // e adiciona ao grafo G
 void adiciona_vertice(int id, char *rotulo, int particao, grafo G) {
@@ -124,10 +135,10 @@ void remove_vertice(int id, grafo G) {
   if (!v) return;
   
   // Remove e desaloca todas as arestas incidentes
-  while (!vazio(v->fronteira_entrada))
-    free(desempilha(v->fronteira_entrada));
-  while (!vazio(v->fronteira_saida))
-    free(desempilha(v->fronteira_saida));
+  while (!vazio(fronteira_entrada(v)))
+    free(desempilha(fronteira_entrada(v)));
+  while (!vazio(fronteira_saida(v)))
+    free(desempilha(fronteira_saida(v)));
   
   free(v);
 }
@@ -135,8 +146,8 @@ void remove_vertice(int id, grafo G) {
 // cria aresta com id <id> incidente a vertices com ids
 // <u_id> e <v_id> e adiciona ao grafo G
 void adiciona_aresta(int id, int u_id, int v_id, grafo G) {
-  vertice u = (vertice) busca_chave_int(u_id, G->vertices, (int_f_obj)vertice_id);
-  vertice v = (vertice) busca_chave_int(v_id, G->vertices, (int_f_obj)vertice_id);
+  vertice u = (vertice) busca_chave_int(u_id, vertices(G), (int_f_obj)vertice_id);
+  vertice v = (vertice) busca_chave_int(v_id, vertices(G), (int_f_obj)vertice_id);
   if (!u || !v) {
     fprintf(stderr, "Erro: vértices não encontrados para criar a aresta.\n");
     return;
@@ -151,9 +162,9 @@ void adiciona_aresta(int id, int u_id, int v_id, grafo G) {
   e->id = id;
   e->u = u;
   e->v = v;
-  empilha(e, G->arestas);           
-  empilha(e, u->fronteira_saida);  
-  empilha(e, v->fronteira_entrada);
+  empilha(e, arestas(G));           
+  empilha(e, fronteira_saida(u));  
+  empilha(e, fronteira_entrada(v));
 }
 
 // remove aresta com id <id> do grafo G e a destroi
