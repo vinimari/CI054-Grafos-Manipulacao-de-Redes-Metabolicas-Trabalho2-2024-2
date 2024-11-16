@@ -12,6 +12,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+// Função auxiliar para verificar se uma string representa uma enzima
 int eh_enzima(char *s) {
   return s[0] == '_';
 }
@@ -171,12 +172,10 @@ void processa(lista substratos, grafo G) {
   // inicializa custos, pais e fila inicial da busca F
   lista F = inicializa_custos(G);
   
-  // variante do Algoritmo de Dijkstra para resolver o problema
+  // variante do algoritmo de Dijkstra para resolver o problema
   while (!vazio(F)) {
     vertice u = (vertice)remove_min(F, (int_f_obj)custo);
     if (!u) break;
-
-    u->estado = PROCESSADO;
 
     // Processa todos os vértices adjacentes a u
     no n = primeiro_no(fronteira_saida(u));
@@ -184,28 +183,23 @@ void processa(lista substratos, grafo G) {
       aresta e = (aresta)conteudo(n);
       vertice v = vertice_v(e); // Vértice adjacente
 
-      // Ignora vértices que já foram fechados
-      if (estado(v) == FECHADO) {
-        n = proximo(n);
-        continue;
-      }
-
-      int novo_custo = 0;
-      // Calcula o novo custo como o custo atual de u + custo da reação
-      if ((vertice_particao(v) == REACAO)) {
-        novo_custo = custo(u) + custo(v);
-      }
-
       // Se encontrar um caminho melhor, atualiza o custo e o pai de v
-      if (novo_custo < custo(v)) {
-        v->custo = novo_custo;
+      if (custo(u) < custo(v)) {
+        v->custo = custo(u);
         v->pai = u;
+      } else if (custo(u) == custo(v)) {
+        // Se o custo for igual, verifica o critério de desempate
+        int profundidade_atual = calcula_profundidade_vertice(v->pai);
+        int profundidade_novo = calcula_profundidade_vertice(u);
+
+        if (profundidade_novo < profundidade_atual) {
+          // Atualiza o pai se o novo caminho for mais raso (caminho mais curto)
+          v->pai = u;
+        }
       }
 
       n = proximo(n);
     }
-
-    u->estado = FECHADO;
   }
 }
 

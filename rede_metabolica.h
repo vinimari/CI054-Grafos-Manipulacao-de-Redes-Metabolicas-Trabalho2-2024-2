@@ -62,4 +62,5 @@ void imprime_reacoes_minimas(grafo G);
 // Calcula e retorna o custo das reações (quantidade de enzimas)
 int calcula_custo_reacao(vertice *v);
 
+
 #endif
