@@ -177,6 +177,16 @@ void remove_aresta(int id, grafo G) {
   free(e);
 }
 
+// Conta e retorna a profundidade (ou o numero de pais) de um vértice.
+int calcula_profundidade_vertice(vertice v) {
+  int profundidade = 0;
+  while (v != NULL) {
+    v = pai(v);
+    profundidade++;
+  }
+  return profundidade;
+}
+
 //---------------------------------------------------------
 // funcoes para operacoes com o grafo pronto:
 

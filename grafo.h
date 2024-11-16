@@ -92,6 +92,9 @@ void adiciona_aresta(int id, int u_id, int v_id, grafo G);
 // remove aresta com id <id> do grafo G e a destroi
 void remove_aresta(int id, grafo G);
 
+// Conta e retorna a profundidade (ou o numero de pais) de um vértice.
+int calcula_profundidade_vertice(vertice v);
+
 //---------------------------------------------------------
 // funcoes para operacoes com o grafo pronto:
 
@@ -111,5 +114,6 @@ void imprime_aresta(aresta e);
 // imprime aresta e no formato de entrada para
 // https://graphonline.ru/en/create_graph_by_edge_list
 void imprime_estrutura_aresta(aresta e);
+
 
 #endif

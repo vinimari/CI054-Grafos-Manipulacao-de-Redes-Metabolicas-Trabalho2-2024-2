@@ -5,7 +5,7 @@
       "name": "C/C++ Runner: Debug Session",
       "type": "cppdbg",
       "request": "launch",
-      "args": [],
+      "args": ["rede.met", "<", "substratos.in"],
       "stopAtEntry": false,
       "externalConsole": false,
       "cwd": "/home/vini/Downloads/Trabalho2_2024-2",
